@@ -1,0 +1,108 @@
+#!/bin/bash
+
+########################################################################
+# Script to use the Corporate Bullshit generator (at 
+# https://sourceforge.net/projects/cbsg/ ) as a lorem ipsum generator.
+# 
+# If you just want one line (NOT one sentence) only all the time, use this.
+# curl -s https://cbsg.sourceforge.io/cgi-bin/live | grep -Eo '^<li>.*</li>' | sed s,\</\\?li\>,,g | shuf -n 1 
+#
+# To get the output into the clipboard, use  
+# | tee >(xclip -selection primary) >(xclip -selection secondary) >(xclip -selection clipboard)
+#
+# or
+# 
+# | tee >(xsel -i --primary) >(xsel -i --secondary) >(xsel -i --clipboard)
+#
+######################################################################## 
+
+
+########################################################################
+# Definitions
+########################################################################
+Origin=0
+NeededSentences=0
+NumParagraphs=""
+Counter=0
+
+
+########################################################################
+# Functions
+########################################################################
+
+function get_bullshit {
+
+mapfile -t -O "$Origin" Lorem < <( curl -s https://cbsg.sourceforge.io/cgi-bin/live | grep -Eo '^<li>.*</li>' | sed s,\</\\?li\>,,g | awk '{printf("%s ", $0)}' | sed 's/\. */. \n/g' )
+Origin=${#Lorem[@]}
+}
+
+function sentences {
+    printf '%s' "${Lorem[$Counter]}" 
+}
+
+
+function main {
+    
+    while [ $Origin -lt $NeededSentences ]; do
+        get_bullshit
+    done
+    
+    if [ $NeededSentences -lt 5 ];then
+        for (( Counter=0; Counter<$NeededSentences; Counter++ ));do
+            sentences
+        done        
+    fi
+    if [ $NumParagraphs > 0 ];then
+        Counter=0
+        for (( i=0; i<$NumParagraphs; i++ ));do
+            for (( a=0; a<5; a++ ));do
+                sentences
+                Counter=$((Counter+1))
+               
+            done
+             echo -e "\n"
+        done
+    fi
+}
+
+function show_help {
+
+echo -e "bullshit -l [ -p # | -s #] " 
+echo -e "-l Begin with  Lorem ipsum dolor sit amet, consectetur adipiscing elit."   
+echo -e "-s Specify number of sentences. "
+echo -e "-p Specify number of paragraphs."
+echo -e "   Paragraphs are five sentences each."
+echo -e "-h shows this help message"
+    exit
+}
+
+########################################################################
+# Wherein we call setup stuff and parse arguments
+########################################################################
+
+while getopts "ls:p:h" opt; do
+    case $opt in
+        l)  mapfile -t Lorem < <(echo "Lorem ipsum dolor sit amet, consectetur adipiscing elit. ")
+            Origin=1
+            ;;
+        s)  NeededSentences=$(echo "$OPTARG")
+            ;;
+        p)  NumParagraphs=$(echo "$OPTARG")
+            ;;
+        h)  
+            show_help
+            exit
+            ;;   
+    esac
+done
+
+if [ $NeededSentences == 0 ];then
+    NeededSentences=1    
+fi
+
+if [ $NumParagraphs > 0 ];then
+    NeededSentences=$(( 5*NumParagraphs ))    
+fi
+
+
+main
