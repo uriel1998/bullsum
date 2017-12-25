@@ -1,0 +1,3 @@
+#!/bin/bash
+
+bullshit "$@" | tee >(xsel -i --primary) >(xsel -i --secondary) >(xsel -i --clipboard)

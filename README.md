@@ -35,3 +35,5 @@ or
 ```
 | tee >(xsel -i --primary) >(xsel -i --secondary) >(xsel -i --clipboard)
 ```
+
+See the attached file ```bsclip``` for a simple example.
